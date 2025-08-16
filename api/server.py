@@ -194,6 +194,27 @@ recipes_data = [
 
 categories = ["すべて", "メイン", "前菜", "デザート", "サラダ", "スープ"]
 
+# Curated food images from Pexels
+food_images = [
+    "https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=800",
+    "https://images.pexels.com/photos/376464/pexels-photo-376464.jpeg?auto=compress&cs=tinysrgb&w=800",
+    "https://images.pexels.com/photos/1279330/pexels-photo-1279330.jpeg?auto=compress&cs=tinysrgb&w=800",
+    "https://images.pexels.com/photos/1633578/pexels-photo-1633578.jpeg?auto=compress&cs=tinysrgb&w=800",
+    "https://images.pexels.com/photos/1092730/pexels-photo-1092730.jpeg?auto=compress&cs=tinysrgb&w=800",
+    "https://images.pexels.com/photos/1410235/pexels-photo-1410235.jpeg?auto=compress&cs=tinysrgb&w=800",
+    "https://images.pexels.com/photos/1099680/pexels-photo-1099680.jpeg?auto=compress&cs=tinysrgb&w=800",
+    "https://images.pexels.com/photos/1438672/pexels-photo-1438672.jpeg?auto=compress&cs=tinysrgb&w=800",
+    "https://images.pexels.com/photos/1640772/pexels-photo-1640772.jpeg?auto=compress&cs=tinysrgb&w=800",
+    "https://images.pexels.com/photos/1199957/pexels-photo-1199957.jpeg?auto=compress&cs=tinysrgb&w=800",
+    "https://images.pexels.com/photos/1435904/pexels-photo-1435904.jpeg?auto=compress&cs=tinysrgb&w=800",
+    "https://images.pexels.com/photos/1640774/pexels-photo-1640774.jpeg?auto=compress&cs=tinysrgb&w=800",
+    "https://images.pexels.com/photos/1640773/pexels-photo-1640773.jpeg?auto=compress&cs=tinysrgb&w=800",
+    "https://images.pexels.com/photos/1640775/pexels-photo-1640775.jpeg?auto=compress&cs=tinysrgb&w=800",
+    "https://images.pexels.com/photos/1640776/pexels-photo-1640776.jpeg?auto=compress&cs=tinysrgb&w=800"
+]
+
+import random
+
 class RecipeAPIHandler(http.server.SimpleHTTPRequestHandler):
     def do_OPTIONS(self):
         """Handle CORS preflight requests"""
@@ -249,6 +270,17 @@ class RecipeAPIHandler(http.server.SimpleHTTPRequestHandler):
             response = {'categories': categories}
             self.wfile.write(json.dumps(response, ensure_ascii=False).encode('utf-8'))
             
+        elif path == '/api/images/random':
+            # Get random food image
+            random_image = random.choice(food_images)
+            response = {'image_url': random_image}
+            self.wfile.write(json.dumps(response, ensure_ascii=False).encode('utf-8'))
+            
+        elif path == '/api/images':
+            # Get all available food images
+            response = {'images': food_images}
+            self.wfile.write(json.dumps(response, ensure_ascii=False).encode('utf-8'))
+            
         elif path.startswith('/api/recipes/'):
             # Get specific recipe by ID
             recipe_id = path.split('/')[-1]
@@ -274,7 +306,7 @@ class RecipeAPIHandler(http.server.SimpleHTTPRequestHandler):
                 new_recipe = {
                     'id': str(uuid.uuid4()),
                     **recipe_data,
-                    'image': recipe_data.get('image', 'https://images.pexels.com/photos/376464/pexels-photo-376464.jpeg?auto=compress&cs=tinysrgb&w=800')
+                    'image': recipe_data.get('image', random.choice(food_images))
                 }
                 
                 recipes_data.insert(0, new_recipe)
@@ -303,6 +335,8 @@ def run_server(port=8080):
         print("  GET  /api/recipes - Get all recipes (supports ?search= and ?category= params)")
         print("  GET  /api/recipes/{id} - Get specific recipe")
         print("  GET  /api/categories - Get all categories")
+        print("  GET  /api/images - Get all available food images")
+        print("  GET  /api/images/random - Get random food image")
         print("  POST /api/recipes - Create new recipe")
         try:
             httpd.serve_forever()

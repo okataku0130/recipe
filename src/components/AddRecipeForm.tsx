@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { X, Plus, Minus } from 'lucide-react';
+import { X, Plus, Minus, Image, Shuffle } from 'lucide-react';
 import { RecipeFormData } from '../types/recipe';
 import { categories } from '../data/mockRecipes';
+import { apiService } from '../services/api';
 
 interface AddRecipeFormProps {
   isOpen: boolean;
@@ -24,7 +25,33 @@ export const AddRecipeForm: React.FC<AddRecipeFormProps> = ({ isOpen, onClose, o
     tags: [''],
   });
 
+  const [loadingImage, setLoadingImage] = useState(false);
+  const [availableImages, setAvailableImages] = useState<string[]>([]);
+  const [showImageGallery, setShowImageGallery] = useState(false);
+
   if (!isOpen) return null;
+
+  const getRandomImage = async () => {
+    try {
+      setLoadingImage(true);
+      const response = await apiService.getRandomImage();
+      setFormData(prev => ({ ...prev, image: response.image_url }));
+    } catch (error) {
+      console.error('Failed to get random image:', error);
+    } finally {
+      setLoadingImage(false);
+    }
+  };
+
+  const loadImageGallery = async () => {
+    try {
+      const response = await apiService.getAllImages();
+      setAvailableImages(response.images);
+      setShowImageGallery(true);
+    } catch (error) {
+      console.error('Failed to load images:', error);
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -191,13 +218,80 @@ export const AddRecipeForm: React.FC<AddRecipeFormProps> = ({ isOpen, onClose, o
             <label className="block text-sm font-medium text-gray-700 mb-2">
               画像URL
             </label>
-            <input
-              type="url"
-              value={formData.image}
-              onChange={(e) => setFormData(prev => ({ ...prev, image: e.target.value }))}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-              placeholder="https://example.com/image.jpg"
-            />
+            <div className="space-y-3">
+              <div className="flex space-x-2">
+                <input
+                  type="url"
+                  value={formData.image}
+                  onChange={(e) => setFormData(prev => ({ ...prev, image: e.target.value }))}
+                  className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                  placeholder="https://example.com/image.jpg"
+                />
+                <button
+                  type="button"
+                  onClick={getRandomImage}
+                  disabled={loadingImage}
+                  className="px-4 py-3 bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200 transition-colors disabled:opacity-50 flex items-center space-x-2"
+                >
+                  {loadingImage ? (
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-orange-600"></div>
+                  ) : (
+                    <Shuffle className="w-4 h-4" />
+                  )}
+                  <span>ランダム</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={loadImageGallery}
+                  className="px-4 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center space-x-2"
+                >
+                  <Image className="w-4 h-4" />
+                  <span>ギャラリー</span>
+                </button>
+              </div>
+              
+              {formData.image && (
+                <div className="mt-3">
+                  <img
+                    src={formData.image}
+                    alt="プレビュー"
+                    className="w-full h-48 object-cover rounded-lg border"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                    }}
+                  />
+                </div>
+              )}
+              
+              {showImageGallery && (
+                <div className="border rounded-lg p-4 bg-gray-50 max-h-64 overflow-y-auto">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="font-medium text-gray-700">画像を選択</h4>
+                    <button
+                      type="button"
+                      onClick={() => setShowImageGallery(false)}
+                      className="text-gray-500 hover:text-gray-700"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    {availableImages.map((imageUrl, index) => (
+                      <img
+                        key={index}
+                        src={imageUrl}
+                        alt={`選択肢 ${index + 1}`}
+                        className="w-full h-20 object-cover rounded cursor-pointer hover:ring-2 hover:ring-orange-500 transition-all"
+                        onClick={() => {
+                          setFormData(prev => ({ ...prev, image: imageUrl }));
+                          setShowImageGallery(false);
+                        }}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
           
           <div>

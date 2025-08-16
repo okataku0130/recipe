@@ -14,6 +14,14 @@ export interface CategoriesResponse {
   categories: string[];
 }
 
+export interface ImageResponse {
+  image_url: string;
+}
+
+export interface ImagesResponse {
+  images: string[];
+}
+
 class ApiService {
   private async request<T>(endpoint: string, options?: RequestInit): Promise<T> {
     try {
@@ -60,6 +68,14 @@ class ApiService {
       method: 'POST',
       body: JSON.stringify(recipeData),
     });
+  }
+
+  async getRandomImage(): Promise<ImageResponse> {
+    return this.request<ImageResponse>('/images/random');
+  }
+
+  async getAllImages(): Promise<ImagesResponse> {
+    return this.request<ImagesResponse>('/images');
   }
 }
 
