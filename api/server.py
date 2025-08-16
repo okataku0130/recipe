@@ -6,6 +6,8 @@ from urllib.parse import urlparse, parse_qs
 from http import HTTPStatus
 import uuid
 from datetime import datetime
+import base64
+import os
 
 # Mock recipes data
 recipes_data = [
@@ -295,7 +297,10 @@ class RecipeAPIHandler(http.server.SimpleHTTPRequestHandler):
 
     def do_POST(self):
         """Handle POST requests"""
-        if self.path == '/api/recipes':
+        parsed_path = urlparse(self.path)
+        path = parsed_path.path
+        
+        if path == '/api/recipes':
             content_length = int(self.headers['Content-Length'])
             post_data = self.rfile.read(content_length)
             
@@ -320,6 +325,43 @@ class RecipeAPIHandler(http.server.SimpleHTTPRequestHandler):
                 
             except json.JSONDecodeError:
                 self.send_error(400, 'Invalid JSON')
+                
+        elif path == '/api/upload-image':
+            # Simulate image upload endpoint
+            content_length = int(self.headers['Content-Length'])
+            post_data = self.rfile.read(content_length)
+            
+            try:
+                upload_data = json.loads(post_data.decode('utf-8'))
+                
+                # In a real application, you would:
+                # 1. Validate the image data
+                # 2. Save the file to disk or cloud storage
+                # 3. Return the URL of the saved image
+                
+                # For demo purposes, we'll simulate successful upload
+                # and return a placeholder image URL
+                placeholder_image = random.choice(food_images)
+                
+                # Simulate processing time
+                import time
+                time.sleep(1)
+                
+                self.send_response(200)
+                self.send_header('Content-type', 'application/json')
+                self.send_header('Access-Control-Allow-Origin', '*')
+                self.end_headers()
+                
+                response = {
+                    'success': True,
+                    'image_url': placeholder_image,
+                    'message': 'Image uploaded successfully'
+                }
+                
+                self.wfile.write(json.dumps(response, ensure_ascii=False).encode('utf-8'))
+                
+            except json.JSONDecodeError:
+                self.send_error(400, 'Invalid JSON')
         else:
             self.send_error(404, 'Endpoint not found')
 
@@ -337,6 +379,7 @@ def run_server(port=8080):
         print("  GET  /api/categories - Get all categories")
         print("  GET  /api/images - Get all available food images")
         print("  GET  /api/images/random - Get random food image")
+        print("  POST /api/upload-image - Upload image (simulated)")
         print("  POST /api/recipes - Create new recipe")
         try:
             httpd.serve_forever()

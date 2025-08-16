@@ -22,6 +22,12 @@ export interface ImagesResponse {
   images: string[];
 }
 
+export interface UploadResponse {
+  success: boolean;
+  image_url: string;
+  message: string;
+}
+
 class ApiService {
   private async request<T>(endpoint: string, options?: RequestInit): Promise<T> {
     try {
@@ -76,6 +82,13 @@ class ApiService {
 
   async getAllImages(): Promise<ImagesResponse> {
     return this.request<ImagesResponse>('/images');
+  }
+
+  async uploadImage(imageData: string): Promise<UploadResponse> {
+    return this.request<UploadResponse>('/upload-image', {
+      method: 'POST',
+      body: JSON.stringify({ image_data: imageData }),
+    });
   }
 }
 

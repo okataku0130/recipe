@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { X, Plus, Minus, Image, Shuffle } from 'lucide-react';
+import { X, Plus, Minus, Image, Shuffle, Upload } from 'lucide-react';
 import { RecipeFormData } from '../types/recipe';
 import { categories } from '../data/mockRecipes';
 import { apiService } from '../services/api';
+import { ImageUpload } from './ImageUpload';
 
 interface AddRecipeFormProps {
   isOpen: boolean;
@@ -28,6 +29,7 @@ export const AddRecipeForm: React.FC<AddRecipeFormProps> = ({ isOpen, onClose, o
   const [loadingImage, setLoadingImage] = useState(false);
   const [availableImages, setAvailableImages] = useState<string[]>([]);
   const [showImageGallery, setShowImageGallery] = useState(false);
+  const [uploadMode, setUploadMode] = useState<'url' | 'upload' | 'gallery'>('url');
 
   if (!isOpen) return null;
 
@@ -216,54 +218,82 @@ export const AddRecipeForm: React.FC<AddRecipeFormProps> = ({ isOpen, onClose, o
           
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              画像URL
+              画像
             </label>
+            
+            <div className="flex space-x-2 mb-4">
+              <button
+                type="button"
+                onClick={() => setUploadMode('url')}
+                className={`px-3 py-2 text-sm rounded-lg transition-colors ${
+                  uploadMode === 'url' 
+                    ? 'bg-orange-100 text-orange-700 border border-orange-300' 
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                URL入力
+              </button>
+              <button
+                type="button"
+                onClick={() => setUploadMode('upload')}
+                className={`px-3 py-2 text-sm rounded-lg transition-colors ${
+                  uploadMode === 'upload' 
+                    ? 'bg-orange-100 text-orange-700 border border-orange-300' 
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                アップロード
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setUploadMode('gallery');
+                  loadImageGallery();
+                }}
+                className={`px-3 py-2 text-sm rounded-lg transition-colors ${
+                  uploadMode === 'gallery' 
+                    ? 'bg-orange-100 text-orange-700 border border-orange-300' 
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                ギャラリー
+              </button>
+            </div>
+            
             <div className="space-y-3">
-              <div className="flex space-x-2">
-                <input
-                  type="url"
-                  value={formData.image}
-                  onChange={(e) => setFormData(prev => ({ ...prev, image: e.target.value }))}
-                  className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                  placeholder="https://example.com/image.jpg"
-                />
-                <button
-                  type="button"
-                  onClick={getRandomImage}
-                  disabled={loadingImage}
-                  className="px-4 py-3 bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200 transition-colors disabled:opacity-50 flex items-center space-x-2"
-                >
-                  {loadingImage ? (
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-orange-600"></div>
-                  ) : (
-                    <Shuffle className="w-4 h-4" />
-                  )}
-                  <span>ランダム</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={loadImageGallery}
-                  className="px-4 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center space-x-2"
-                >
-                  <Image className="w-4 h-4" />
-                  <span>ギャラリー</span>
-                </button>
-              </div>
-              
-              {formData.image && (
-                <div className="mt-3">
-                  <img
-                    src={formData.image}
-                    alt="プレビュー"
-                    className="w-full h-48 object-cover rounded-lg border"
-                    onError={(e) => {
-                      e.currentTarget.style.display = 'none';
-                    }}
+              {uploadMode === 'url' && (
+                <div className="flex space-x-2">
+                  <input
+                    type="url"
+                    value={formData.image}
+                    onChange={(e) => setFormData(prev => ({ ...prev, image: e.target.value }))}
+                    className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                    placeholder="https://example.com/image.jpg"
                   />
+                  <button
+                    type="button"
+                    onClick={getRandomImage}
+                    disabled={loadingImage}
+                    className="px-4 py-3 bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200 transition-colors disabled:opacity-50 flex items-center space-x-2"
+                  >
+                    {loadingImage ? (
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-orange-600"></div>
+                    ) : (
+                      <Shuffle className="w-4 h-4" />
+                    )}
+                    <span>ランダム</span>
+                  </button>
                 </div>
               )}
               
-              {showImageGallery && (
+              {uploadMode === 'upload' && (
+                <ImageUpload
+                  currentImage={formData.image}
+                  onImageChange={(imageUrl) => setFormData(prev => ({ ...prev, image: imageUrl }))}
+                />
+              )}
+              
+              {uploadMode === 'gallery' && showImageGallery && (
                 <div className="border rounded-lg p-4 bg-gray-50 max-h-64 overflow-y-auto">
                   <div className="flex items-center justify-between mb-3">
                     <h4 className="font-medium text-gray-700">画像を選択</h4>
@@ -289,6 +319,19 @@ export const AddRecipeForm: React.FC<AddRecipeFormProps> = ({ isOpen, onClose, o
                       />
                     ))}
                   </div>
+                </div>
+              )}
+              
+              {formData.image && uploadMode !== 'upload' && (
+                <div className="mt-3">
+                  <img
+                    src={formData.image}
+                    alt="プレビュー"
+                    className="w-full h-48 object-cover rounded-lg border"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                    }}
+                  />
                 </div>
               )}
             </div>
